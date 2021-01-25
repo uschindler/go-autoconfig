@@ -9,7 +9,7 @@ import (
 type Config struct {
 	ServiceAddr string `yaml:"service_addr"`
 
-	Domain string `yaml:"domain" validate:"required"`
+	Domain string `yaml:"domain"`
 
 	IMAP *Server `yaml:"imap"`
 	SMTP *Server `yaml:"smtp"`

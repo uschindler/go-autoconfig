@@ -6,6 +6,8 @@ import (
 	"go-autoconfig/config"
 	"io/ioutil"
 	"net/http"
+  "strings"
+  "regexp"
 )
 
 type Handler struct {
@@ -16,6 +18,20 @@ type server struct {
 	Host     string
 	Port     int
 	STARTTLS bool
+}
+
+func (h *Handler) GetDomain(ctx echo.Context) string {
+  domain := h.Config.Domain
+  if domain == "" {
+    host := strings.Split(ctx.Request().Host, ":")[0]
+    matched, _ := regexp.MatchString(`^[\w.-]+$`, host)
+    if matched {
+      return strings.TrimPrefix(host, "autoconfig.")
+    } else {
+      return "invalid"
+    }
+  }
+  return domain;
 }
 
 func (h *Handler) Outlook(ctx echo.Context) error {
@@ -48,7 +64,7 @@ func (h *Handler) Outlook(ctx echo.Context) error {
 	}{
 		Schema: req.Request.AcceptableResponseSchema,
 		Email:  req.Request.EMailAddress,
-		Domain: h.Config.Domain,
+		Domain: h.GetDomain(ctx),
 		IMAP: &server{
 			Host:     h.Config.IMAP.Host,
 			Port:     h.Config.IMAP.Port,
@@ -71,7 +87,7 @@ func (h *Handler) Thunderbird(ctx echo.Context) error {
 		IMAP   *server
 		SMTP   *server
 	}{
-		Domain: h.Config.Domain,
+		Domain: h.GetDomain(ctx),
 		IMAP: &server{
 			Host:     h.Config.IMAP.Host,
 			Port:     h.Config.IMAP.Port,
@@ -103,14 +119,16 @@ func (h *Handler) AppleMail(ctx echo.Context) error {
 		SMTP   *server
 	}{
 		Email:  req.Email,
-		Domain: h.Config.Domain,
+		Domain: h.GetDomain(ctx),
 		IMAP: &server{
 			Host:     h.Config.IMAP.Host,
 			Port:     h.Config.IMAP.Port,
+			STARTTLS: h.Config.IMAP.STARTTLS,
 		},
 		SMTP: &server{
 			Host:     h.Config.SMTP.Host,
 			Port:     h.Config.SMTP.Port,
+			STARTTLS: h.Config.SMTP.STARTTLS,
 		},
 	}
 
